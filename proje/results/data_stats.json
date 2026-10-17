@@ -1,0 +1,19 @@
+{
+ "n_rows": 20400,
+ "n_subjects": 51,
+ "n_features": 31,
+ "n_H": 11,
+ "n_DD": 10,
+ "n_UD": 10,
+ "mean_H_ms": 90.09621122994653,
+ "mean_DD_ms": 249.19247745098042,
+ "mean_UD_ms": 158.91726470588236,
+ "median_total_s": 2.2997500000000004,
+ "p99_total_s": 6.6898249999999955,
+ "max_total_s": 35.9972,
+ "frac_total_gt_3x_median": 0.008774509803921568,
+ "n_negative_UD": 22118,
+ "n_missing": 0,
+ "subject_median_total_min_s": 1.4130500000000001,
+ "subject_median_total_max_s": 4.932200000000001
+}
