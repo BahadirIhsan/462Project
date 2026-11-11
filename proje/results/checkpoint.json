@@ -1,0 +1,205 @@
+{
+ "checks": {
+  "columns: 3 index + 31 timing": {
+   "pass": true,
+   "detail": "11 H, 10 DD, 10 UD"
+  },
+  "missing / non-numeric values": {
+   "pass": true,
+   "detail": 0
+  },
+  "duplicate (subject, session, rep)": {
+   "pass": true,
+   "detail": 0
+  },
+  "complete grid 51 x 8 x 50": {
+   "pass": true,
+   "detail": "51 x 8 x 50"
+  },
+  "hold times > 0": {
+   "pass": true,
+   "detail": "min 1.4 ms"
+  },
+  "down-down latencies > 0": {
+   "pass": true,
+   "detail": "min 1.1 ms"
+  },
+  "identity DD = H + UD": {
+   "pass": true,
+   "detail": "max deviation 8.9e-16 s"
+  },
+  "negative up-down (key overlap)": {
+   "pass": true,
+   "detail": "22118 values (10.8%), valid, kept"
+  }
+ },
+ "dataset": {
+  "entries": 20400,
+  "subjects": 51,
+  "sessions": 8,
+  "reps_per_session": 50,
+  "features": 31,
+  "subject_ids": "s002-s057, 5 IDs absent",
+  "mean_ms": {
+   "H": 90.09621122994653,
+   "DD": 249.19247745098042,
+   "UD": 158.91726470588236
+  },
+  "sd_ms": {
+   "H": 30.496369289378855,
+   "DD": 217.50428001959557,
+   "UD": 221.71000615109406
+  },
+  "total_s": {
+   "median": 2.2997500000000004,
+   "p1": 1.3035940000000001,
+   "p99": 6.6898249999999955,
+   "max": 35.9972
+  },
+  "subject_median_total_s": {
+   "min": 1.4130500000000001,
+   "max": 4.932200000000001
+  },
+  "session_median_total_s": {
+   "1": 2.8009500000000003,
+   "2": 2.49545,
+   "3": 2.3915,
+   "4": 2.23365,
+   "5": 2.21355,
+   "6": 2.1428000000000003,
+   "7": 2.0836000000000006,
+   "8": 2.0772500000000003
+  },
+  "eval_users": 41,
+  "tune_users": 10,
+  "subjects_faster_s8_than_s1": 49,
+  "mean_within_session_cv_total": 0.1768633649624274
+ },
+ "quality": {
+  "neg_ud_values": 22118,
+  "neg_ud_frac": 0.10842156862745098,
+  "neg_ud_entries_frac": 0.5424019607843137,
+  "neg_ud_by_pair": {
+   "period.t": 0.04426470588235294,
+   "t.i": 0.09524509803921569,
+   "i.e": 0.20039215686274509,
+   "e.five": 0.027401960784313725,
+   "five.Shift.r": 0.0,
+   "Shift.r.o": 0.0407843137254902,
+   "o.a": 0.1296078431372549,
+   "a.n": 0.3179901960784314,
+   "n.l": 0.2053921568627451,
+   "l.Return": 0.023137254901960783
+  },
+  "neg_ud_subject_range": [
+   0.0,
+   0.35175
+  ],
+  "entries_any_dd_gt_1s": 1747,
+  "entries_any_dd_gt_2s": 189,
+  "max_single_dd_s": 25.9873,
+  "longest_entry": {
+   "subject": "s049",
+   "sessionIndex": "1",
+   "rep": "8"
+  },
+  "time_resolution_s": 0.0001,
+  "mahalanobis_cov_rank": 21
+ },
+ "rejection": {
+  "1.5": {
+   "C2_rejected": 499,
+   "C2_total": 8200,
+   "C2_by_session": [
+    285,
+    103,
+    77,
+    34
+   ],
+   "C2_users_affected": 41,
+   "C2_max_per_user": 44,
+   "C1_rejected": 332,
+   "C1_total": 8200
+  },
+  "2.0": {
+   "C2_rejected": 77,
+   "C2_total": 8200,
+   "C2_by_session": [
+    57,
+    9,
+    8,
+    3
+   ],
+   "C2_users_affected": 25,
+   "C2_max_per_user": 15,
+   "C1_rejected": 38,
+   "C1_total": 8200
+  },
+  "3.0": {
+   "C2_rejected": 5,
+   "C2_total": 8200,
+   "C2_by_session": [
+    4,
+    0,
+    1,
+    0
+   ],
+   "C2_users_affected": 4,
+   "C2_max_per_user": 2,
+   "C1_rejected": 3,
+   "C1_total": 8200
+  }
+ },
+ "effect_C2": {
+  "Manhattan": {
+   "eer_all": 0.22252743902439026,
+   "eer_filtered": 0.22007926829268296,
+   "diff": -0.00244817073170732,
+   "diff_ci95": [
+    -0.00412217987804878,
+    -0.0008318597560975682
+   ]
+  },
+  "Scaled Manhattan": {
+   "eer_all": 0.1506219512195122,
+   "eer_filtered": 0.1498689024390244,
+   "diff": -0.0007530487804878062,
+   "diff_ci95": [
+    -0.002006173780487806,
+    0.00033254573170731416
+   ]
+  },
+  "Mahalanobis": {
+   "eer_all": 0.15321951219512195,
+   "eer_filtered": 0.15103048780487804,
+   "diff": -0.0021890243902439044,
+   "diff_ci95": [
+    -0.004844588414634148,
+    2.2103658536577918e-05
+   ]
+  },
+  "One-class SVM": {
+   "eer_all": 0.14279268292682926,
+   "eer_filtered": 0.14096951219512194,
+   "diff": -0.0018231707317073193,
+   "diff_ci95": [
+    -0.004731707317073173,
+    0.0003598323170731686
+   ]
+  }
+ },
+ "rejected_example": {
+  "subject": "s049",
+  "session": 1,
+  "rep": 8,
+  "total_s": 35.9972,
+  "user_median_s": 5.47255,
+  "max_dd_feature": "DD.i.e",
+  "max_dd_s": 25.9873
+ },
+ "entry_example": {
+  "subject": "s002",
+  "session": 1,
+  "rep": 7
+ }
+}
