@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Password + typing rhythm</h1>
+<p class="sub">A stolen password is not enough if it is not typed <i>the way you type it</i>. This localhost demo
+enrols your typing rhythm (key hold times and latencies, the same 3n+1 features as the CMU benchmark) and checks it at
+every login with the detectors evaluated in our report: Scaled Manhattan, a One-class SVM and, for the CMU password,
+the Siamese embedding.</p>
+<div class="grid">
+  <div class="card step"><b class="n">1</b><div><h3>Register</h3><p class="note">Choose a username and a password. Only a salted scrypt hash of the password is stored.</p><a class="btn" href="{{ url_for('register_page') }}">Create account</a></div></div>
+  <div class="card step"><b class="n">2</b><div><h3>Enrol</h3><p class="note">Type your password at least {{ min_enrol }} times (30+ recommended). Come back for a 2nd session later: templates from several sessions age better.</p></div></div>
+  <div class="card step"><b class="n">3</b><div><h3>Log in, then attack</h3><p class="note">Log in normally, then let a team-mate type <i>your</i> password in "impostor test" mode and see whether the rhythm check stops them.</p><a class="btn ghost" href="{{ url_for('login_page') }}">Open login</a></div></div>
+</div>
+<div class="card" style="margin-top:16px">
+  <h2>Enrolled users</h2>
+  {% if users %}
+  <table><tr><th>user</th><th class="num">enrolment entries</th><th class="num">sessions</th><th>detectors</th><th>level</th></tr>
+  {% for u in users %}<tr><td>{{ u.username }}</td><td class="num">{{ u.n_samples }}</td><td class="num">{{ u.n_sessions }}</td>
+  <td>{{ 'SM + SVM + Siamese' if u.cmu_layout else 'SM + SVM' }}</td><td>{{ u.level }}</td></tr>{% endfor %}</table>
+  {% else %}<p class="note">No users yet.</p>{% endif %}
+  <p class="note">Demo data stay in <code>demo/instance/keystroke_demo.db</code> on this machine. They are only used for this live demo, never in the CMU evaluation.</p>
+</div>
+{% endblock %}

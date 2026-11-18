@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Demo log{% endblock %}
+{% block body %}
+<h1>Demo log</h1>
+<p class="sub">Live attempts in this demo. These few attempts by team members illustrate the system; they are <b>not</b> an evaluation
+(too few people and attempts, browser timing, self-declared roles). The evaluation is on the CMU benchmark only.</p>
+<div class="grid">
+  <div class="card tight"><div class="note">genuine attempts accepted</div><div class="big">{{ stats.genuine.accepted }} / {{ stats.genuine.n }}</div></div>
+  <div class="card tight"><div class="note">impostor attempts accepted (false matches)</div><div class="big">{{ stats.impostor.accepted }} / {{ stats.impostor.n }}</div></div>
+  <div class="card tight"><div class="note">enrolled users</div><div class="big">{{ users|length }}</div></div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Latest attempts</h3>
+{% if attempts %}<table><tr><th>when</th><th>claimed user</th><th>role</th><th>password</th><th class="num">k</th><th class="num">fused</th><th class="num">threshold</th><th>decision</th></tr>
+{% for a in attempts %}<tr><td class="ts" data-t="{{ a.created_at }}"></td><td>{{ a.username }}</td><td>{{ a.role }}</td><td>{{ 'ok' if a.password_ok else 'wrong' }}</td><td class="num">{{ a.n_entries }}</td>
+<td class="num">{{ '%.2f'|format(a.fused) if a.fused is not none else '–' }}</td><td class="num">{{ '%.2f'|format(a.threshold) if a.threshold is not none else '–' }}</td>
+<td><span class="pill {{ 'good' if (a.accepted and a.role == 'genuine') or (not a.accepted and a.role == 'impostor') else 'bad' }}">{{ 'accepted' if a.accepted else 'rejected' }}</span></td></tr>{% endfor %}</table>
+{% else %}<p class="note">No attempts yet.</p>{% endif %}</div>
+<script>document.querySelectorAll(".ts").forEach((e) => e.textContent = new Date(+e.dataset.t * 1000).toLocaleString());</script>
+{% endblock %}

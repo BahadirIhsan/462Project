@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My data{% endblock %}
+{% block body %}
+<h1>My data · {{ user.username }}</h1>
+<p class="sub">Everything the demo stores about you, and the controls for it.</p>
+<div class="grid">
+  <div class="card"><h3>Enrolment template</h3>
+    <table><tr><th>session</th><th class="num">entries</th></tr>{% for r in counts %}<tr><td>{{ r.session_no }}</td><td class="num">{{ r.n }}</td></tr>{% endfor %}</table>
+    <p class="note">{{ counts|sum(attribute='n') }} entries (minimum {{ min_enrol }}). Stored: timing vectors only, no key text.</p>
+    <a class="btn ghost" href="{{ url_for('enroll_page') }}">Add more entries</a></div>
+  <div class="card"><h3>Security level</h3>
+    <div class="seg" id="lv">{% for k, q in levels.items() %}<button data-v="{{ k }}" class="{{ 'on' if user.level == k }}">{{ k }} ({{ (q*100)|int }}%)</button>{% endfor %}</div>
+    <p class="note">The threshold is the chosen percentile of your own held-out scores: <b>relaxed</b> rejects about 1% of your own entries
+    seen during enrolment, <b>strict</b> about 10%. Stricter means fewer impostors accepted but more retries for you. On new days expect more rejections than this (template ageing, see report).</p>
+    <div class="msg" id="lm"></div></div>
+  <div class="card"><h3>Delete everything</h3><p class="note">Removes your account, password hash, template and attempt log from the database (cascade delete).</p>
+    <button class="danger" id="del">Delete my account and biometric data</button><div class="msg" id="dm"></div></div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Recent attempts on this account</h3>
+  {% if attempts %}<table><tr><th>when</th><th>role</th><th>password</th><th class="num">entries</th><th class="num">fused</th><th class="num">threshold</th><th>decision</th></tr>
+  {% for a in attempts %}<tr><td class="ts" data-t="{{ a.created_at }}"></td><td>{{ a.role }}</td><td>{{ 'ok' if a.password_ok else 'wrong' }}</td><td class="num">{{ a.n_entries }}</td>
+  <td class="num">{{ '%.2f'|format(a.fused) if a.fused is not none else '–' }}</td><td class="num">{{ '%.2f'|format(a.threshold) if a.threshold is not none else '–' }}</td>
+  <td><span class="pill {{ 'good' if a.accepted else 'bad' }}">{{ 'accepted' if a.accepted else 'rejected' }}</span></td></tr>{% endfor %}</table>
+  {% else %}<p class="note">No attempts yet.</p>{% endif %}</div>
+<script>
+document.querySelectorAll(".ts").forEach((e) => e.textContent = new Date(+e.dataset.t * 1000).toLocaleString());
+document.querySelectorAll("#lv button").forEach((b) => b.onclick = async () => {
+  const j = await post("/api/level", { level: b.dataset.v });
+  if (j.ok) { document.querySelectorAll("#lv button").forEach((x) => x.classList.toggle("on", x === b)); lm.className = "msg ok"; lm.textContent = "Saved."; }
+});
+let armed = false;
+document.getElementById("del").onclick = async (e) => {
+  if (!armed) { armed = true; e.target.textContent = "Click again to confirm deletion"; return; }
+  const j = await post("/api/delete", {}); if (j.ok) location = j.next;
+};
+</script>
+{% endblock %}

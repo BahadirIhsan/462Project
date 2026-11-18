@@ -2,10 +2,25 @@ import os
 import numpy as np
 import pandas as pd
 
-DEFAULT_CSV = os.path.join(os.path.dirname(__file__), "..", "..", "eğitim için dökümanlar", "DSL-StrongPasswordData.csv")
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+CANDIDATES = [os.path.join(_ROOT, "data", "DSL-StrongPasswordData.csv"),
+              os.path.join(_ROOT, "..", "eğitim için dökümanlar", "DSL-StrongPasswordData.csv")]
 
 
-def load_cmu(path=DEFAULT_CSV):
+def find_csv():
+    """KEYSTROKE_CSV ortam değişkeni, yoksa proje/data/DSL-StrongPasswordData.csv (README'ye bakın)."""
+    env = os.environ.get("KEYSTROKE_CSV")
+    if env:
+        return env
+    for c in CANDIDATES:
+        if os.path.exists(c):
+            return c
+    raise FileNotFoundError("CMU data not found. Download DSL-StrongPasswordData.csv from https://www.cs.cmu.edu/~keystroke/ "
+                            "into proje/data/ or set KEYSTROKE_CSV=/path/to/file.csv")
+
+
+def load_cmu(path=None):
+    path = path or find_csv()
     df = pd.read_csv(path)
     feat_cols = [c for c in df.columns if c not in ("subject", "sessionIndex", "rep")]
     return df, feat_cols

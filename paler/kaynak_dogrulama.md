@@ -20,3 +20,11 @@
 | 15 | Pedregosa ve ark., JMLR 12:2825–2830, 2011 | https://jmlr.org/papers/v12/pedregosa11a.html | Çok bilinen künye; aramayla ayrıca teyit etmedim, bağlantıdan kontrol edin |
 
 **Listeden çıkarılan:** Teh, Teoh, Yue (2013) anket makalesi: dergi adını teyit edemedim.
+
+## Final rapor için eklenenler (18 Kas 2026, internetten kontrol edildi)
+| # | Kaynak | Bağlantı | Durum |
+|---|---|---|---|
+| 16 | Schroff, Kalenichenko, Philbin, FaceNet, CVPR 2015 | https://arxiv.org/abs/1503.03832 | Doğrulandı (arXiv sayfası CVPR 2015 diyor) |
+| 17 | Hermans, Beyer, Leibe, In Defense of the Triplet Loss…, 2017 | https://arxiv.org/abs/1703.07737 | Doğrulandı (batch-hard triplet kaybı buradan) |
+| 18 | Paszke ve ark., PyTorch, NeurIPS 2019 | https://arxiv.org/abs/1912.01703 | Doğrulandı |
+| 19 | Doddington, Liggett, Martin, Przybocki, Reynolds, SHEEP, GOATS, LAMBS and WOLVES, ICSLP 1998 | https://researchr.org/publication/DoddingtonLMPR98 | Künye doğrulandı (ISCA/ICSLP 1998, Sidney) |

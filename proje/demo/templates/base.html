@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}RhythmGate{% endblock %} · keystroke login demo</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='capture.js') }}"></script>
+</head>
+<body>
+<header><nav class="nav">
+  <a class="brand" href="{{ url_for('home') }}">⌨ RhythmGate <span>BİL462 · A5 demo</span></a>
+  <a class="l" href="{{ url_for('register_page') }}">Register</a>
+  <a class="l" href="{{ url_for('login_page') }}">Log in / test</a>
+  {% if user %}<a class="l" href="{{ url_for('enroll_page') }}">Enrol</a><a class="l" href="{{ url_for('account') }}">My data</a>{% endif %}
+  <a class="l" href="{{ url_for('lab') }}">Demo log</a>
+  <a class="l" href="{{ url_for('results') }}">CMU results</a>
+  {% if user %}<span class="who">signed in as <b>{{ user.username }}</b> · <a href="{{ url_for('logout') }}">log out</a></span>{% endif %}
+</nav></header>
+<main>{% block body %}{% endblock %}</main>
+</body>
+</html>

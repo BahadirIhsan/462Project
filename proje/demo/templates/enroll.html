@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Enrol{% endblock %}
+{% block body %}
+<h1>Enrol your typing rhythm</h1>
+<p class="sub">Type your password and press <b>Enter</b>, again and again, at your natural speed. Typos or Backspace discard
+the entry (as in the CMU study). Minimum {{ min_enrol }} entries; 30+ over two sessions (e.g. today and tomorrow) gives a better template.</p>
+<div class="grid" style="grid-template-columns: 1.3fr 1fr">
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Enrolment session <span id="sess">{{ sess }}</span></h2><span class="pill" id="state">collecting</span></div>
+    <input id="t" class="typebox" type="password" autocomplete="off" autofocus placeholder="type password + Enter" style="margin-top:12px">
+    <div class="msg" id="m"></div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="row" style="justify-content:space-between"><span class="note"><b id="n">{{ counts|sum(attribute='n') }}</b> entries in total · <b id="ns">0</b> in this session</span>
+      <span class="row"><button class="ghost" id="newsess">Start new session</button><a class="btn" href="{{ url_for('login_page') }}">Go to login</a></span></div>
+  </div>
+  <div class="card">
+    <h3>Previous sessions</h3>
+    {% if counts %}<table><tr><th>session</th><th class="num">entries</th></tr>{% for r in counts %}<tr><td>{{ r.session_no }}</td><td class="num">{{ r.n }}</td></tr>{% endfor %}</table>
+    {% else %}<p class="note">None yet: this is your first session.</p>{% endif %}
+    <p class="note">The threshold is learned from your own entries only: leave-one-session-out once you have two sessions, otherwise 5-fold cross-validation.</p>
+  </div>
+</div>
+<div class="card" style="margin-top:16px"><h3>Your rhythm so far</h3><div id="chart"><p class="note">Appears after the first entry.</p></div></div>
+<script>
+const MIN = {{ min_enrol }}, REC = 30;
+const t = document.getElementById("t"), m = document.getElementById("m");
+const show = (n) => { document.getElementById("n").textContent = n; document.getElementById("bar").style.width = Math.min(100, 100 * n / REC) + "%";
+  const s = document.getElementById("state"); s.textContent = n >= MIN ? "ready to log in" : `${MIN - n} more needed`; s.className = "pill " + (n >= MIN ? "good" : ""); };
+show({{ counts|sum(attribute='n') }});
+keyCapture(t, {
+  onReset: (why) => { m.className = "msg err"; m.textContent = why; },
+  onKey: () => { m.textContent = ""; },
+  onEntry: async (events) => {
+    const j = await post("/api/enroll", { events });
+    if (!j.ok) { m.className = "msg err"; m.textContent = j.error; return; }
+    m.className = "msg ok"; m.textContent = `Entry saved (${(j.last.filter((_, i) => i % 3 === 1).reduce((a, b) => a + b, 0) + j.last[j.last.length - 1]).toFixed(2)} s).`;
+    show(j.n); document.getElementById("ns").textContent = j.n_session;
+    rhythmChart(document.getElementById("chart"), j.mean, j.sd, j.last);
+  },
+});
+document.getElementById("newsess").onclick = async () => {
+  const j = await post("/api/enroll/new-session", {});
+  if (j.ok) { document.getElementById("sess").textContent = j.session; document.getElementById("ns").textContent = 0; m.className = "msg ok"; m.textContent = "New session started. Ideally do this after a break or on another day."; t.focus(); }
+};
+</script>
+{% endblock %}

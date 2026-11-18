@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}CMU results{% endblock %}
+{% block body %}
+{% set S = R.summary %}{% set FP = F.fold_protocol %}
+<h1>Evaluation on the CMU benchmark</h1>
+<p class="sub">41 evaluation subjects (10 further subjects only for tuning), 95% bootstrap CIs by resampling subjects.
+Reproduce with <code>python reproduce.py</code>. Full discussion in the final report.</p>
+<div class="card"><h3>Mean EER per condition</h3>
+<table><tr><th>detector</th><th class="num">C1 within-session</th><th class="num">C2 cross-session</th><th class="num">C2, mean of 5 entries</th><th class="num">C3 replication (51 subj.)</th><th class="num">Killourhy &amp; Maxion 2009</th></tr>
+{% set ref = {'Manhattan': '0.153', 'Scaled Manhattan': '0.096', 'Mahalanobis': '0.110', 'One-class SVM': '0.102'} %}
+{% for n, r in FP.items() %}<tr><td>{{ n }}</td>
+<td class="num">{{ '%.3f'|format(r.C1.eer_mean) if r.C1 is defined else '–' }}</td>
+<td class="num"><b>{{ '%.3f'|format(r.C2.eer_mean) }}</b> <span class="note">[{{ '%.3f'|format(r.C2.ci95[0]) }}, {{ '%.3f'|format(r.C2.ci95[1]) }}]</span></td>
+<td class="num">{{ '%.3f'|format(r.fusion_k['5'].eer_mean) }}</td>
+<td class="num">{{ '%.3f'|format(S[n].C3_makale_protokolu.eer_mean) if n in S else '–' }}</td>
+<td class="num">{{ ref.get(n, '–') }}</td></tr>{% endfor %}</table>
+<p class="note">C1/C2 here use the fold protocol (impostors never seen by the shared Siamese model), so all detectors are compared on identical data.</p></div>
+<div class="grid" style="margin-top:16px">
+  <div class="card"><h3>DET, cross-session (main curve)</h3><img class="fig" src="{{ url_for('result_img', name='fin_det_c2_fold.png') }}" alt="DET curves"></div>
+  <div class="card"><h3>Template ageing and multi-entry fusion</h3><img class="fig" src="{{ url_for('result_img', name='fin_drift_fusion.png') }}" alt="drift and fusion"></div>
+</div>
+{% endblock %}
