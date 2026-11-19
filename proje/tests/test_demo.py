@@ -67,7 +67,27 @@ g3, _ = acc_rate("s040", "genuine", k=3)
 print(f"genuine with k=3 entries accepted {g3:.0%}")
 w = c.post("/api/verify", json={"username": "s040demo", "role": "genuine", "entries": [to_events(data["s040"][6, 0])[:5] + to_events(data["s040"][6, 0])[-1:]]}).get_json()
 assert w["ok"] and not w["password_ok"] and not w["accepted"]
-for page in ("/", "/login", "/lab", "/results", "/account", "/enroll", "/register"):
+# language must change only the text: identical entries -> identical scores, threshold and decision in TR and EN
+same = []
+for lang in ("tr", "en", "tr"):
+    c.set_cookie("lang", lang)
+    j = c.post("/api/verify", json={"username": "s040demo", "role": "impostor", "entries": [to_events(data["s046"][6, 3])]}).get_json()
+    same.append((j["fused"], j["threshold"], j["accepted"], tuple(sorted(j["scores"].items()))))
+assert same[0] == same[1] == same[2], same
+c.set_cookie("lang", "en"); e_en = c.post("/api/verify", json={"username": "nobody", "entries": [[]]}).get_json()["error"]
+c.set_cookie("lang", "tr"); e_tr = c.post("/api/verify", json={"username": "nobody", "entries": [[]]}).get_json()["error"]
+assert e_en == "Unknown user." and e_tr == "Bilinmeyen kullanıcı.", (e_en, e_tr)
+html_tr = c.get("/login").get_data(as_text=True)
+c.set_cookie("lang", "en"); html_en = c.get("/login").get_data(as_text=True)
+assert "Kim yazıyor?" in html_tr and "Who is typing?" in html_en
+r = c.get("/lang/tr?next=/lab"); assert r.status_code == 302 and r.headers["Location"].endswith("/lab")
+assert c.get("/lang/xx?next=//evil.com").headers["Location"] in ("/", "http://localhost/")
+print("language: OK (TR and EN give identical fused score, threshold and decision; only text differs)")
+for lang in ("tr", "en"):
+    c.set_cookie("lang", lang)
+    for page in ("/", "/login", "/lab", "/analysis", "/results", "/account", "/enroll", "/register"):
+        assert c.get(page).status_code == 200, (lang, page)
+for page in ("/", "/login", "/lab", "/analysis", "/results", "/account", "/enroll", "/register"):
     assert c.get(page).status_code == 200, page
 assert c.post("/api/delete", json={}).get_json()["ok"]
 assert c.get("/account").status_code == 302

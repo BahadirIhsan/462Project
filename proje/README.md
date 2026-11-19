@@ -81,6 +81,10 @@ python tests/test_demo.py   # automated end-to-end check (no browser needed)
 4. **Impostor test**: another person types your password in "impostor test" mode; logged, never signs in.
 5. **My data**: security level, attempt history, delete account and all biometric data.
 
+Interface language: Turkish by default; switch with **TUR / ENG** in the header (stored in a `lang` cookie). The language
+changes only the displayed text: enrolment, scores, thresholds and decisions run through the same code and are identical in
+both languages (checked in `tests/test_demo.py`). All UI strings are in `demo/i18n.py`.
+
 Storage (`demo/instance/keystroke_demo.db`, SQLite, created on first run; excluded from the ZIP):
 `users` (username, scrypt password hash, consent time, level), `samples` (enrolment timing vectors only, no key text),
 `attempts` (claimed user, role, z-scores, threshold, decision). Demo data are never used in the CMU evaluation.

@@ -6,8 +6,8 @@ What is stored and why:
   samples   - enrolment timing vectors only (seconds; 3n+1 numbers per entry). Raw key events and the typed text are
               not stored. These are biometric data: they stay on this machine and can be deleted by the user.
   attempts  - each verification attempt: claimed user, self-declared role (genuine / impostor test), per-detector
-              z-scores, fused score, threshold and decision. Used only for the live demo statistics, never for the
-              CMU evaluation in the report.
+              z-scores, fused score, threshold and decision. Analysed only on the demo site ("Demo analysis"), never used
+              for the CMU evaluation or in the report.
 """
 import json, os, sqlite3, time
 

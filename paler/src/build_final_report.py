@@ -178,9 +178,10 @@ enrolment entries ({p(rej['C2_rejected'] / rej['C2_total'])}%), mostly from sess
 (Table 5). Main results therefore use all entries, which keeps them comparable with [1].</p>
 <p><b>Subject split.</b> The 51 subjects are split once (seed 0) into a <i>tuning group</i> of 10 subjects and an <i>evaluation group</i> of 41.
 All hyper-parameters (one-class SVM ν, γ; Siamese size and training length) are chosen on the tuning group, and all reported results except
-the replication use only the 41 evaluation subjects. <b>Own data.</b> No own biometric data are used in the evaluation. For the demo (Section 4.6) we
-collected typing data from the two team members only, with the instructor's prior approval and the members' explicit consent (a consent
-box at registration); these entries are stored locally, can be deleted at any time, and are never mixed with the CMU evaluation.</p>
+the replication use only the 41 evaluation subjects. <b>Own data.</b> With the instructor's prior approval, the demo (Section 4.6) collects typing data from volunteer participants who agreed
+to share them (explicit consent box at registration); entries stay on the local machine and can be deleted at any time. These data are
+analysed only inside the demo application ("Demo analysis" page) and shown in the live demonstration; they are never mixed with the CMU
+evaluation, and every number in this report comes from the CMU benchmark.</p>
 
 <h2>4. Methods</h2>
 <div class="flow"><div><b>Input</b>key-down / key-up times of one entry</div><i>→</i><div><b>Features</b>31 values: 11 H, 10 DD, 10 UD</div><i>→</i>
@@ -226,7 +227,7 @@ hash of the password is stored, never the password text; the biometric template 
 machine and deletable by the user (cascade delete). Login first checks the password hash and then the rhythm with scaled Manhattan + one-class
 SVM (+ the Siamese network trained on all 51 CMU subjects when the CMU password is used), z-normalised and thresholded exactly as in
 Sections 4.4–4.5 (leave-one-session-out when the user has two enrolment sessions, otherwise 5-fold cross-validation). An "impostor test" mode lets
-a team-mate type another member's password; such attempts are logged but never sign anyone in. Screens are shown in Appendix B.</p>
+one participant type another participant's password; such attempts are logged but never sign anyone in. A "Demo analysis" page summarises the participants' attempts (FMR/FNMR, score margins, pooled EER, per-participant table). Screens are shown in Appendix B.</p>
 
 <h2>5. Evaluation</h2>
 <h3>5.1 Protocols and number of comparisons</h3>
@@ -324,7 +325,7 @@ smaller for a long-used password and larger over months [12].</li>
 <li><b>Siamese model.</b> A small MLP on ≈41 training subjects; a larger population, session-aware training (positives from different sessions)
 or template updating would likely help in C2. The model was selected among 18 configurations; we did not test other architectures.</li>
 <li><b>Thresholds.</b> Enrolment-based thresholds do not account for future drift; the EER is a summary, not a deployable operating point.</li>
-<li><b>Demo.</b> Browser timestamps are coarser and noisier than the CMU clock, there are only a few self-declared trials, and the template is
+<li><b>Demo.</b> Browser timestamps are coarser and noisier than the CMU clock, self-declared roles (demo results are shown in the application, not here), and the template is
 stored unprotected (no template protection or encryption at rest). The demo shows the pipeline; it is not evidence of accuracy.</li>
 </ul>
 
@@ -362,7 +363,7 @@ year) and re-opened by us before submission. We can explain every part of the co
 <h2>Appendix B. Demo</h2>
 {fig('demo_login_crop.png', '80%', 'Login result in the demo: password check, per-detector z-scores, fused score vs. threshold (with the held-out scores of the user), and this entry against the template (keys shown by position so the password is not revealed).', 'B1', HERE)}
 <p class="small">Run: <code>cd proje &amp;&amp; .venv/bin/python demo/app.py</code> → http://127.0.0.1:5000 (register → enrol ≥ 15 entries, ideally in two sessions →
-log in → let a team-mate try in impostor-test mode). Data: <code>demo/instance/keystroke_demo.db</code> (tables <code>users</code>, <code>samples</code>, <code>attempts</code>).</p>
+log in → let another participant try in impostor-test mode; statistics on the "Demo analysis" page). Data: <code>demo/instance/keystroke_demo.db</code> (tables <code>users</code>, <code>samples</code>, <code>attempts</code>).</p>
 </body></html>"""
 
 out_html = os.path.join(HERE, "final_report.html")

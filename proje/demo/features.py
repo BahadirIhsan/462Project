@@ -9,7 +9,11 @@ MODIFIERS = {"Shift", "Control", "Alt", "Meta", "CapsLock", "AltGraph", "Fn", "T
 
 
 class EntryError(ValueError):
-    pass
+    """key = i18n message key (demo/i18n.py); kw = format arguments. Message text is chosen at display time."""
+
+    def __init__(self, key, **kw):
+        super().__init__(key)
+        self.key, self.kw = key, kw
 
 
 def events_to_features(events):
@@ -17,18 +21,18 @@ def events_to_features(events):
     Returns (typed_text, feature_list, column_names)."""
     ev = [e for e in events if e.get("k") not in MODIFIERS]
     if len(ev) < 2 or ev[-1].get("k") != "Enter":
-        raise EntryError("entry must end with Enter")
+        raise EntryError("fe_enter_end")
     for e in ev:
         if not isinstance(e.get("d"), (int, float)) or not isinstance(e.get("u"), (int, float)) or e["u"] < e["d"]:
-            raise EntryError("incomplete key event (key still held or missing key-up)")
+            raise EntryError("fe_incomplete")
         if e["k"] == "Enter":
             continue
         if len(e["k"]) != 1:
-            raise EntryError(f"editing key '{e['k']}' used: please retype the whole password")
+            raise EntryError("fe_edit", k=e["k"])
     if any(e["k"] == "Enter" for e in ev[:-1]):
-        raise EntryError("Enter pressed early")
+        raise EntryError("fe_enter_early")
     if any(ev[i + 1]["d"] < ev[i]["d"] for i in range(len(ev) - 1)):
-        raise EntryError("events out of order")
+        raise EntryError("fe_order")
     text = "".join(e["k"] for e in ev[:-1])
     feats, names = [], []
     name = lambda k: "Return" if k == "Enter" else k
@@ -43,5 +47,5 @@ def events_to_features(events):
             names.append(f"UD.{name(e['k'])}.{name(nx['k'])}")
     total = (ev[-1]["u"] - ev[0]["d"]) / 1000.0
     if total > 30:
-        raise EntryError("entry took longer than 30 s, please type it again in one go")
+        raise EntryError("fe_too_long")
     return text, feats, names

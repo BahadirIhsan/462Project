@@ -1,57 +1,57 @@
 {% extends "base.html" %}
-{% block title %}Log in{% endblock %}
+{% block title %}{{ _('nav_login') }}{% endblock %}
 {% block body %}
-<h1>Log in with password + rhythm</h1>
-<p class="sub">The password is checked first; if it is correct, your typing rhythm is compared with the template of the claimed user.
-Use <b>impostor test</b> when someone types <i>another</i> person's password: the attempt is logged for the demo statistics and never signs anyone in.</p>
+<h1>{{ _('login_title') }}</h1>
+<p class="sub">{{ _('login_sub')|safe }}</p>
 <div class="grid" style="grid-template-columns: 1fr 1.25fr">
   <div class="card">
-    <label for="u">Username</label>
+    <label for="u">{{ _('username') }}</label>
     <select id="u">{% for x in users if x.n_samples > 0 %}<option {{ 'selected' if user and user.username == x.username }}>{{ x.username }}</option>{% endfor %}</select>
-    <label>Who is typing?</label>
-    <div class="seg" id="role"><button data-v="genuine" class="on">the account owner</button><button data-v="impostor">impostor test</button></div>
-    <label>Entries per decision (score fusion)</label>
+    <label>{{ _('who_typing') }}</label>
+    <div class="seg" id="role"><button data-v="genuine" class="on">{{ _('owner') }}</button><button data-v="impostor">{{ _('impostor_test') }}</button></div>
+    <label>{{ _('entries_per_decision') }}</label>
     <div class="seg" id="k"><button data-v="1" class="on">1</button><button data-v="3">3</button></div>
-    <label for="t">Password (type it, then Enter)</label>
-    <input id="t" class="typebox" type="password" autocomplete="off" placeholder="password + Enter">
+    <label for="t">{{ _('pw_type_label') }}</label>
+    <input id="t" class="typebox" type="password" autocomplete="off" placeholder="{{ _('pw_placeholder') }}">
     <div class="dots" id="dots" style="margin-top:8px"></div>
     <div class="msg" id="m"></div>
   </div>
-  <div class="card" id="res"><h3>Result</h3><p class="note">Type the password to see the decision, each detector's score, the threshold and how your rhythm compares with the template.</p></div>
+  <div class="card" id="res"><h3>{{ _('result') }}</h3><p class="note">{{ _('result_hint') }}</p></div>
 </div>
-<div class="card" style="margin-top:16px;display:none" id="chartcard"><h3>This attempt vs. the template</h3><div id="chart"></div></div>
+<div class="card" style="margin-top:16px;display:none" id="chartcard"><h3>{{ _('attempt_vs_template') }}</h3><div id="chart"></div></div>
 <script>
+const DET = {{ {"Scaled Manhattan": _('det_Scaled Manhattan'), "One-class SVM": _('det_One-class SVM'), "Siamese embedding": _('det_Siamese embedding')}|tojson }};
+const LEVEL = {{ {"relaxed": _('level_relaxed'), "balanced": _('level_balanced'), "strict": _('level_strict')}|tojson }};
 const t = document.getElementById("t"), m = document.getElementById("m");
 let role = "genuine", k = 1, buf = [];
 const seg = (id, set) => document.querySelectorAll(`#${id} button`).forEach((b) => b.onclick = () => {
   document.querySelectorAll(`#${id} button`).forEach((x) => x.classList.remove("on")); b.classList.add("on"); set(b.dataset.v); buf = []; dots(); t.focus(); });
 seg("role", (v) => role = v); seg("k", (v) => k = +v);
-const dots = () => { document.getElementById("dots").innerHTML = k > 1 ? [...Array(k).keys()].map((i) => `<span class="${i < buf.length ? "on" : ""}"></span>`).join("") + ` <span class="note" style="background:none;width:auto">${buf.length}/${k} entries</span>` : ""; };
+const dots = () => { document.getElementById("dots").innerHTML = k > 1 ? [...Array(k).keys()].map((i) => `<span class="${i < buf.length ? "on" : ""}"></span>`).join("") + ` <span class="note" style="background:none;width:auto">${tx("js_entries", { i: buf.length, k })}</span>` : ""; };
 dots();
-const fmt = (x) => (x >= 0 ? "+" : "") + x.toFixed(2);
+const fmt = (x) => (x >= 0 ? "+" : "") + nf(x);
 keyCapture(t, {
   onReset: (why) => { m.className = "msg err"; m.textContent = why; },
   onKey: () => { m.textContent = ""; },
   onEntry: async (events) => {
     buf.push(events); dots();
-    if (buf.length < k) { m.className = "msg"; m.textContent = `entry ${buf.length} of ${k} captured, type again`; return; }
+    if (buf.length < k) { m.className = "msg"; m.textContent = tx("js_entry_of", { i: buf.length, k }); return; }
     const j = await post("/api/verify", { username: document.getElementById("u").value, role, entries: buf });
     buf = []; dots();
     const r = document.getElementById("res");
     if (!j.ok) { m.className = "msg err"; m.textContent = j.error; return; }
     m.textContent = "";
-    if (!j.password_ok) { r.innerHTML = `<div class="verdict bad"><strong>Rejected</strong><p>${j.message}</p></div>`; document.getElementById("chartcard").style.display = "none"; return; }
+    if (!j.password_ok) { r.innerHTML = `<div class="verdict bad"><strong>${tx("js_rejected")}</strong><p>${j.message}</p></div>`; document.getElementById("chartcard").style.display = "none"; return; }
     const imp = j.role === "impostor";
     const cls = j.accepted ? (imp ? "bad" : "good") : (imp ? "good" : "bad");
-    const head = j.accepted ? (imp ? "Accepted: false match!" : "Welcome back, access granted") : (imp ? "Impostor stopped" : "Rejected: rhythm does not match");
-    const expl = j.accepted ? (imp ? "The impostor's rhythm was close enough to the template. This is the FMR side of the trade-off." : "Correct password and a familiar rhythm.")
-      : (imp ? "Correct password, but the rhythm was not the owner's." : "Correct password, unfamiliar rhythm. This is a false non-match if you are the owner: try again, or use 3 entries.");
+    const head = tx(j.accepted ? (imp ? "js_h_fm" : "js_h_ok") : (imp ? "js_h_stop" : "js_h_rej"));
+    const expl = tx(j.accepted ? (imp ? "js_e_fm" : "js_e_ok") : (imp ? "js_e_stop" : "js_e_rej"));
     r.innerHTML = `<div class="verdict ${cls}"><strong>${head}</strong><p>${expl}</p></div>
-      <dl class="kv"><dt>fused score</dt><dd><b>${fmt(j.fused)}</b> (accept if ≤ ${fmt(j.threshold)})</dd>
-      ${Object.entries(j.scores).map(([n, v]) => `<dt>${n}</dt><dd>${fmt(v)} z</dd>`).join("")}
-      <dt>security level</dt><dd>${j.level}: threshold = ${Math.round(j.q * 100)}th percentile of held-out own entries</dd>
-      <dt>template</dt><dd>${j.n_enrol} entries, ${j.n_sessions} session(s)</dd></dl><div id="strip" style="margin-top:10px"></div>
-      ${imp ? "" : (j.accepted ? `<p><a class="btn" href="/account">Go to my data</a></p>` : "")}`;
+      <dl class="kv"><dt>${tx("js_fused")}</dt><dd><b>${fmt(j.fused)}</b> (${tx("js_accept_if", { t: fmt(j.threshold) })})</dd>
+      ${Object.entries(j.scores).map(([n, v]) => `<dt>${DET[n] || n}</dt><dd>${fmt(v)} z</dd>`).join("")}
+      <dt>${tx("js_level")}</dt><dd>${tx("js_level_desc", { l: LEVEL[j.level] || j.level, q: Math.round(j.q * 100) })}</dd>
+      <dt>${tx("js_template")}</dt><dd>${tx("js_template_desc", { n: j.n_enrol, s: j.n_sessions })}</dd></dl><div id="strip" style="margin-top:10px"></div>
+      ${imp ? "" : (j.accepted ? `<p><a class="btn" href="/account">${tx("js_go_mydata")}</a></p>` : "")}`;
     scoreStrip(document.getElementById("strip"), j.held, j.fused, j.threshold);
     document.getElementById("chartcard").style.display = "";
     rhythmChart(document.getElementById("chart"), j.mean, j.sd, j.attempt);

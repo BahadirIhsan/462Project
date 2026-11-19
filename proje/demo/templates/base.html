@@ -1,21 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}RhythmGate{% endblock %} · keystroke login demo</title>
+<title>{% block title %}{{ _('brand') }}{% endblock %} · {{ _('page_suffix') }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script>window.T = {{ JS|tojson }}; window.LANG = {{ lang|tojson }};</script>
 <script src="{{ url_for('static', filename='capture.js') }}"></script>
 </head>
 <body>
 <header><nav class="nav">
-  <a class="brand" href="{{ url_for('home') }}">⌨ RhythmGate <span>BİL462 · A5 demo</span></a>
-  <a class="l" href="{{ url_for('register_page') }}">Register</a>
-  <a class="l" href="{{ url_for('login_page') }}">Log in / test</a>
-  {% if user %}<a class="l" href="{{ url_for('enroll_page') }}">Enrol</a><a class="l" href="{{ url_for('account') }}">My data</a>{% endif %}
-  <a class="l" href="{{ url_for('lab') }}">Demo log</a>
-  <a class="l" href="{{ url_for('results') }}">CMU results</a>
-  {% if user %}<span class="who">signed in as <b>{{ user.username }}</b> · <a href="{{ url_for('logout') }}">log out</a></span>{% endif %}
+  <a class="brand" href="{{ url_for('home') }}">⌨ {{ _('brand') }} <span>{{ _('brand_sub') }}</span></a>
+  <a class="l" href="{{ url_for('register_page') }}">{{ _('nav_register') }}</a>
+  <a class="l" href="{{ url_for('login_page') }}">{{ _('nav_login') }}</a>
+  {% if user %}<a class="l" href="{{ url_for('enroll_page') }}">{{ _('nav_enrol') }}</a><a class="l" href="{{ url_for('account') }}">{{ _('nav_mydata') }}</a>{% endif %}
+  <a class="l" href="{{ url_for('lab') }}">{{ _('nav_log') }}</a>
+  <a class="l" href="{{ url_for('analysis_page') }}">{{ _('nav_analysis') }}</a>
+  <a class="l" href="{{ url_for('results') }}">{{ _('nav_results') }}</a>
+  {% if user %}<span class="who">{{ _('signed_in_as') }} <b>{{ user.username }}</b> · <a href="{{ url_for('logout') }}">{{ _('logout') }}</a></span>{% endif %}
+  <span class="langsw" role="group" aria-label="{{ _('lang_label') }}">
+    <a href="{{ url_for('set_lang', code='tr', next=request.full_path.rstrip('?')) }}" class="{{ 'on' if lang == 'tr' }}" hreflang="tr">TUR</a>
+    <a href="{{ url_for('set_lang', code='en', next=request.full_path.rstrip('?')) }}" class="{{ 'on' if lang == 'en' }}" hreflang="en">ENG</a>
+  </span>
 </nav></header>
 <main>{% block body %}{% endblock %}</main>
+<script>
+// tarih/saat gösterimi seçili dile göre
+document.querySelectorAll(".ts").forEach((e) => e.textContent = new Date(+e.dataset.t * 1000).toLocaleString(window.LANG === "tr" ? "tr-TR" : "en-GB"));
+</script>
 </body>
 </html>

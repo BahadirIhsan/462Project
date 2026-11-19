@@ -161,6 +161,8 @@ def det_fig(resd, title, fname_, lo, order):
 det_fig(full_c1, "C1 within-session (41 subjects, 40 impostors)", "fin_det_c1.png", 1e-2, list(base))
 det_fig(full_c2, "C2 cross-session (41 subjects, 40 impostors)", "fin_det_c2.png", 1e-3, list(base))
 det_fig({n: flat(C2[n]) for n in allnames}, "C2 cross-session, fold protocol (impostors unseen)", "fin_det_c2_fold.png", 1e-2, allnames)
+gdet = fgrid[fgrid >= 1e-2]
+F["det_c2_fold_curve"] = {"fmr": gdet.tolist(), "fnmr": {n: np.mean([det_curve_grid(a, b, gdet) for a, b in flat(C2[n]).values()], 0).tolist() for n in allnames}}
 F["full_protocol_check"] = {n: {"C1": float(np.mean([eer(a, b) for a, b in full_c1[n].values()])),
                                 "C2": float(np.mean([eer(a, b) for a, b in full_c2[n].values()]))} for n in base}
 

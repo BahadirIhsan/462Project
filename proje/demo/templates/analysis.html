@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ _('an_title') }}{% endblock %}
+{% block body %}
+<h1>{{ _('an_title') }}</h1>
+<p class="sub">{{ _('an_sub')|safe }}</p>
+<div class="grid">
+  <div class="card tight"><div class="note">{{ _('an_participants') }}</div><div class="big">{{ A.n_users }}</div></div>
+  <div class="card tight"><div class="note">{{ _('an_enrol_entries') }}</div><div class="big">{{ A.n_enrol }}</div></div>
+  <div class="card tight"><div class="note">{{ _('an_attempts') }}</div><div class="big">{{ A.n_attempts }}</div>
+    <div class="note">{{ _('an_wrong_pw', n=A.wrong_pw.genuine + A.wrong_pw.impostor) }}</div></div>
+  <div class="card tight"><div class="note">{{ _('an_eer') }}</div><div class="big">{{ pc(A.eer) }}</div></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h3>{{ _('an_rates') }}</h3>
+<table><tr><th>{{ _('an_entries_per') }}</th><th class="num">{{ _('an_gen_n') }}</th><th class="num">FNMR</th><th class="num">{{ _('an_imp_n') }}</th><th class="num">FMR</th></tr>
+{% for k in ('all', '1', '3') %}{% set r = A.rates[k] %}<tr><td>{{ _('an_k_' ~ k) }}</td><td class="num">{{ r.gen_n }}</td><td class="num">{{ pc(r.fnmr) }}</td><td class="num">{{ r.imp_n }}</td><td class="num">{{ pc(r.fmr) }}</td></tr>{% endfor %}
+</table>
+<p class="note">{{ _('an_rates_note') }}{% if A.det_eer %} {{ _('an_det_eer') }}: {% for n, e in A.det_eer.items() %}{{ _('det_' ~ n) }} {{ pc(e) }}{{ ', ' if not loop.last }}{% endfor %}.{% endif %}</p></div>
+
+<div class="grid" style="margin-top:16px">
+  <div class="card"><h3>{{ _('an_hist') }}</h3><div id="hist"></div><p class="note">{{ _('an_hist_note') }}</p></div>
+  <div class="card"><h3>{{ _('an_curve') }}</h3><div id="curve"></div><p class="note">{{ _('an_curve_note') }}</p></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h3>{{ _('an_per_user') }}</h3>
+{% if A.users %}<div class="chart"><table><tr><th>{{ _('th_user') }}</th><th class="num">{{ _('an_enrol_entries') }}</th><th class="num">{{ _('th_session') }}</th><th class="num">{{ _('an_speed') }}</th>
+<th class="num">{{ _('an_gen_n') }}</th><th class="num">FNMR</th><th class="num">{{ _('an_imp_against') }}</th><th class="num">FMR</th><th class="num">EER</th></tr>
+{% for u in A.users %}<tr><td>{{ u.username }}</td><td class="num">{{ u.n_enrol }}</td><td class="num">{{ u.n_sessions }}</td><td class="num">{{ num(u.speed) if u.speed is not none else '–' }}</td>
+<td class="num">{{ u.gen_n }}</td><td class="num">{{ pc(u.fnmr) }}</td><td class="num">{{ u.imp_n }}</td><td class="num">{{ pc(u.fmr) }}</td><td class="num">{{ pc(u.eer) }}</td></tr>{% endfor %}</table></div>
+<p class="note">{{ _('an_per_user_note') }}</p>
+{% else %}<p class="note">{{ _('no_attempts') }}</p>{% endif %}</div>
+
+<div class="card" style="margin-top:16px"><h3>{{ _('an_timeline') }}</h3><div id="tl"></div><p class="note">{{ _('an_timeline_note') }}</p></div>
+
+<script>
+const A = {{ {"g": A.gen_margins, "i": A.imp_margins, "curve": A.curve, "tl": A.timeline}|tojson }};
+const AX = {{ {"margin": _('an_ax_margin'), "count": _('an_ax_count'), "fmr": _('ax_fmr'), "fnmr": _('ax_fnmr'), "time": _('an_ax_time'), "gen": _('role_genuine'), "imp": _('role_impostor')}|tojson }};
+const LOC = window.LANG === "tr" ? "tr-TR" : "en-GB";
+const GC = "var(--good)", IC = "var(--bad)";
+function frame(box, W, H, o) {
+  const L = 44, R = 12, T = 10, B = 38;
+  const X = (v) => L + (W - L - R) * (v - o.xr[0]) / (o.xr[1] - o.xr[0]);
+  const Y = (v) => T + (H - T - B) * (1 - (v - o.yr[0]) / (o.yr[1] - o.yr[0]));
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img" });
+  o.xt.forEach((v) => { el("line", { x1: X(v), x2: X(v), y1: T, y2: H - B, class: "axis" }, svg); el("text", { x: X(v), y: H - B + 14, "text-anchor": v === o.xr[1] ? "end" : v === o.xr[0] ? "start" : "middle" }, svg, o.xf ? o.xf(v) : v.toLocaleString(LOC)); });
+  o.yt.forEach((v) => { el("line", { x1: L, x2: W - R, y1: Y(v), y2: Y(v), class: "axis" }, svg); el("text", { x: L - 5, y: Y(v) + 3, "text-anchor": "end" }, svg, v.toLocaleString(LOC)); });
+  el("text", { x: (L + W - R) / 2, y: H - 5, "text-anchor": "middle" }, svg, o.xl);
+  el("text", { x: 11, y: (T + H - B) / 2, "text-anchor": "middle", transform: `rotate(-90 11 ${(T + H - B) / 2})` }, svg, o.yl);
+  box.appendChild(svg);
+  return { svg, X, Y };
+}
+const clip = (v) => Math.max(-6, Math.min(6, v));
+function legend(svg, W) {
+  [[AX.gen, GC], [AX.imp, IC]].forEach(([t, c], i) => { el("rect", { x: W - 150 + i * 80, y: 4, width: 9, height: 9, fill: c }, svg); el("text", { x: W - 137 + i * 80, y: 12 }, svg, t); });
+}
+// 1) pay histogramı
+(function () {
+  const box = document.getElementById("hist");
+  if (!A.g.length && !A.i.length) { box.textContent = "–"; return; }
+  const bins = 24, lo = -6, w = 12 / bins, cnt = (a) => { const h = Array(bins).fill(0); a.forEach((v) => h[Math.min(bins - 1, Math.floor((clip(v) - lo) / w))]++); return h; };
+  const hg = cnt(A.g), hi = cnt(A.i), ymax = Math.max(1, ...hg, ...hi);
+  const step = Math.max(1, Math.ceil(ymax / 5));
+  const f = frame(box, 520, 280, { xr: [lo, 6], yr: [0, step * Math.ceil(ymax / step)], xt: [-6, -4, -2, 0, 2, 4, 6], yt: [...Array(Math.ceil(ymax / step) + 1).keys()].map((k) => k * step), xl: AX.margin, yl: AX.count, xf: (v) => (v === 6 ? "≥6" : v === -6 ? "≤−6" : v.toLocaleString(LOC)) });
+  [[hg, GC], [hi, IC]].forEach(([h, c]) => h.forEach((n, b) => n && el("rect", { x: f.X(lo + b * w) + 1, y: f.Y(n), width: f.X(lo + w) - f.X(lo) - 2, height: f.Y(0) - f.Y(n), fill: c, opacity: 0.5 }, f.svg)));
+  el("line", { x1: f.X(0), x2: f.X(0), y1: 10, y2: 242, class: "th" }, f.svg);
+  legend(f.svg, 520);
+})();
+// 2) FMR–FNMR eğrisi (havuzlanmış paylar üzerinden eşik kaydırma)
+(function () {
+  const box = document.getElementById("curve");
+  if (!A.curve) { box.textContent = "–"; return; }
+  const f = frame(box, 520, 280, { xr: [0, 100], yr: [0, 100], xt: [0, 20, 40, 60, 80, 100], yt: [0, 20, 40, 60, 80, 100], xl: AX.fmr, yl: AX.fnmr });
+  el("line", { x1: f.X(0), y1: f.Y(0), x2: f.X(100), y2: f.Y(100), class: "axis" }, f.svg);
+  el("polyline", { points: A.curve.fmr.map((x, i) => `${f.X(x * 100)},${f.Y(A.curve.fnmr[i] * 100)}`).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2 }, f.svg);
+})();
+// 3) zaman çizelgesi: her deneme bir nokta
+(function () {
+  const box = document.getElementById("tl");
+  if (!A.tl.length) { box.textContent = "–"; return; }
+  const n = A.tl.length;
+  const f = frame(box, 1040, 260, { xr: [0, Math.max(1, n - 1)], yr: [-6, 6], xt: [0, Math.round((n - 1) / 2), n - 1].filter((v, i, a) => a.indexOf(v) === i), yt: [-6, -3, 0, 3, 6], xl: AX.time, yl: AX.margin, xf: (v) => new Date(A.tl[v].t * 1000).toLocaleDateString(LOC) });
+  el("line", { x1: 44, x2: 1028, y1: f.Y(0), y2: f.Y(0), class: "th" }, f.svg);
+  A.tl.forEach((a, k) => { const c = el("circle", { cx: f.X(k), cy: f.Y(clip(a.m)), r: 3.5, fill: a.role === "genuine" ? GC : IC, opacity: 0.75 }, f.svg); el("title", {}, c, `${a.user} · ${a.role === "genuine" ? AX.gen : AX.imp} · ${a.m.toLocaleString(LOC, { maximumFractionDigits: 2 })}`); });
+  legend(f.svg, 1040);
+})();
+</script>
+{% endblock %}

@@ -1,5 +1,10 @@
 // Captures key-down / key-up times (event.timeStamp, ms) for one password entry ending with Enter.
 // Like the CMU study, an entry with an editing key (Backspace, arrows...) is discarded and must be retyped.
+// UI strings come from window.T (demo/i18n.py, chosen by the language cookie). Only display text depends on it.
+const T = window.T || {};
+const tx = (k, o = {}) => (T[k] || k).replace(/\{(\w+)\}/g, (_, n) => (o[n] !== undefined ? o[n] : ""));
+// sayı biçimi yalnızca gösterim içindir (TR: ondalık virgül)
+const nf = (x, d = 2) => (window.LANG === "tr" ? x.toFixed(d).replace(".", ",") : x.toFixed(d));
 const MODS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "AltGraph", "Fn", "Tab"]);
 
 function keyCapture(input, { onEntry, onReset, onKey }) {
@@ -18,7 +23,7 @@ function keyCapture(input, { onEntry, onReset, onKey }) {
       events.push(ev); pending[e.code] = ev;
       return;
     }
-    if (e.key.length !== 1) { e.preventDefault(); reset(`"${e.key}" pressed: entry discarded, type the whole password again`); return; }
+    if (e.key.length !== 1) { e.preventDefault(); reset(tx("js_discard", { k: e.key })); return; }
     if (events.length && events[events.length - 1].k === "Enter") { e.preventDefault(); return; }
     const ev = { k: e.key, d: e.timeStamp, u: null };
     events.push(ev); pending[e.code] = ev;
@@ -32,23 +37,23 @@ function keyCapture(input, { onEntry, onReset, onKey }) {
   const finish = () => {
     const typed = input.value;
     const done = () => {
-      if (events.some((x) => x.u === null)) { reset("a key was still held down when Enter was released, please retype"); return; }
+      if (events.some((x) => x.u === null)) { reset(tx("js_held")); return; }
       const text = events.filter((x) => x.k !== "Enter").map((x) => x.k).join("");
-      if (text !== typed) { reset("the text field was edited during typing, please retype"); return; }
+      if (text !== typed) { reset(tx("js_edited")); return; }
       const out = events.map((x) => ({ k: x.k, d: +x.d.toFixed(3), u: +x.u.toFixed(3) }));
       reset(null);
       onEntry(out);
     };
     if (events.some((x) => x.u === null)) setTimeout(done, 250); else done();
   };
-  for (const t of ["paste", "drop", "cut"]) input.addEventListener(t, (e) => { e.preventDefault(); reset("paste is not allowed: the rhythm must be typed"); });
-  input.addEventListener("blur", () => { if (events.length) reset("focus lost, entry discarded"); });
+  for (const t of ["paste", "drop", "cut"]) input.addEventListener(t, (e) => { e.preventDefault(); reset(tx("js_paste")); });
+  input.addEventListener("blur", () => { if (events.length) reset(tx("js_blur")); });
   return { reset };
 }
 
 async function post(url, body) {
   const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  let j; try { j = await r.json(); } catch { j = { ok: false, error: `server error ${r.status}` }; }
+  let j; try { j = await r.json(); } catch { j = { ok: false, error: tx("js_server", { s: r.status }) }; }
   return j;
 }
 
@@ -69,8 +74,8 @@ function rhythmChart(box, mean, sd, entry) {
   const nk = (mean.length + 2) / 3;
   const lab = (i) => (i === nk - 1 ? "⏎" : String(i + 1));
   const groups = [
-    ["H", "hold time, key down → up", [...Array(nk).keys()].map((i) => [lab(i), 3 * i])],
-    ["DD", "down-down latency, key → next key", [...Array(nk - 1).keys()].map((i) => [`${lab(i)}→${lab(i + 1)}`, 3 * i + 1])],
+    ["H", tx("js_h_label"), [...Array(nk).keys()].map((i) => [lab(i), 3 * i])],
+    ["DD", tx("js_dd_label"), [...Array(nk - 1).keys()].map((i) => [`${lab(i)}→${lab(i + 1)}`, 3 * i + 1])],
   ];
   for (const [g, label, idx] of groups) {
     const W = Math.max(600, idx.length * 46), Hh = 150, padL = 34, padB = 26, padT = 20;
@@ -78,7 +83,7 @@ function rhythmChart(box, mean, sd, entry) {
     const ymax = Math.max(0.05, ...vals) * 1.1;
     const y = (v) => padT + (Hh - padT - padB) * (1 - Math.max(0, v) / ymax);
     const svg = el("svg", { viewBox: `0 0 ${W} ${Hh}`, width: W, height: Hh, role: "img" });
-    el("text", { x: 2, y: 11 }, svg, `${g}: ${label} (ms) · band = your template mean ± 1 SD` + (entry ? " · dot = this entry (red if > 2 SD off)" : ""));
+    el("text", { x: 2, y: 11 }, svg, `${g}: ${label} (ms) · ${tx("js_band")}` + (entry ? ` · ${tx("js_dot")}` : ""));
     for (const t of [0, ymax / 2, ymax]) {
       el("line", { x1: padL, x2: W, y1: y(t), y2: y(t), class: "axis" }, svg);
       el("text", { x: 2, y: y(t) + 3 }, svg, Math.round(t * 1000));
@@ -92,7 +97,7 @@ function rhythmChart(box, mean, sd, entry) {
       if (entry) {
         const off = Math.abs(entry[i] - mean[i]) > 2 * sd[i];
         const c = el("circle", { cx, cy: y(entry[i]), r: 4.5, class: off ? "off" : "ok" }, svg);
-        el("title", {}, c, `${g} ${name}: ${(entry[i] * 1000).toFixed(0)} ms (template ${(mean[i] * 1000).toFixed(0)} ± ${(sd[i] * 1000).toFixed(0)})`);
+        el("title", {}, c, `${g} ${name}: ${(entry[i] * 1000).toFixed(0)} ms (${tx("js_tpl")} ${(mean[i] * 1000).toFixed(0)} ± ${(sd[i] * 1000).toFixed(0)})`);
       }
       el("text", { x: cx, y: Hh - 8, "text-anchor": "middle" }, svg, name);
     });
@@ -117,9 +122,9 @@ function scoreStrip(box, held, fused, th) {
   });
   el("line", { x1: padL, x2: W - padR, y1: H - padB, y2: H - padB, class: "axis" }, svg);
   el("line", { x1: x(th), x2: x(th), y1: 8, y2: H - padB + 4, class: "th" }, svg);
-  el("text", { x: x(th) + 4, y: 30 }, svg, `threshold ${th.toFixed(2)}`);
+  el("text", { x: x(th) + 4, y: 30 }, svg, tx("js_threshold", { t: nf(th) }));
   el("path", { d: `M${x(fx)},${H - padB + 2} l-7,12 h14 z`, class: fused <= th ? "ok" : "off" }, svg);
-  el("text", { x: Math.min(Math.max(x(fx), 70), W - 95), y: H - 2, "text-anchor": "middle" }, svg, `this attempt ${fused.toFixed(2)}${clipped ? " (off scale →)" : ""}`);
-  el("text", { x: padL, y: 12 }, svg, "your own held-out entries (green) · lower = more like you");
+  el("text", { x: Math.min(Math.max(x(fx), 70), W - 95), y: H - 2, "text-anchor": "middle" }, svg, tx("js_this_attempt", { f: nf(fused) }) + (clipped ? tx("js_off_scale") : ""));
+  el("text", { x: padL, y: 12 }, svg, tx("js_strip_title"));
   box.appendChild(svg);
 }

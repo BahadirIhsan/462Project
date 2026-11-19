@@ -20,7 +20,8 @@ Yeniden üretmek: `cd proje && .venv/bin/python reproduce.py` → `cd ../paler/s
 14. **Teşekkür / sorular.**
 
 ## Demo öncesi kontrol listesi
-- [ ] Sunumdan en az 1 gün önce: her ikiniz `python demo/app.py` ile kayıt olun, **2 oturumda** (iki farklı gün) toplam 30+ giriş yapın (aynı laptop ve klavyeyle!).
+- [ ] Demo verisi: verisini paylaşmayı kabul eden gönüllü katılımcılar (kayıtta rıza kutusu). Sunuma kadar katılımcılardan kayıt + hesap sahibi/sahtekâr denemeleri toplayın (her hesap ≥ 15 giriş, tercihen 2 farklı gün, aynı laptop ve klavye).
+- [ ] Sonuçlar yalnızca sitede: **Demo kayıtları** (tek tek denemeler) ve **Demo analizi** (FMR/FNMR, skor payı histogramı, FMR–FNMR eğrisi, havuzlanmış EER, katılımcı bazında tablo, zaman çizelgesi). Raporda demo sonucu yok.
 - [ ] Sunum günü aynı laptopu kullanın; eşik ayarı "balanced".
 - [ ] Yedek: demo çalışmazsa slayt 11'deki ekran görüntüsünü gösterin.
 
@@ -30,4 +31,4 @@ Yeniden üretmek: `cd proje && .venv/bin/python reproduce.py` → `cd ../paler/s
 - **EER eşiği nerede seçildi?** EER eşiksiz özet ölçüt; işletim noktası eşiği yalnız kayıt verisinden (oturum-bırakmalı) seçildi.
 - **Neden FMR %0,1'in altı yok?** Kişi başı 8000 sahtekâr skoru; daha altı desteklenmiyor.
 - **Sasikumar %1 EER diyor?** k-katlı çapraz doğrulama, oturumlar karışık, sahtekâr verisiyle eğitim → bizimle karşılaştırılamaz.
-- **Kendi verinizi topladınız mı?** Sadece demo için, yerelde, değerlendirmede kullanılmadı (hocadan önceden onay aldık; sadece iki takım üyesi, kayıt ekranında açık rıza kutusu var, istenince silinebiliyor).
+- **Kendi verinizi topladınız mı?** Evet, sadece demo için ve hocadan önceden onay alarak: verisini paylaşmayı kabul eden gönüllü katılımcılardan (rıza kutusu, istenince silinebilir, yerelde). Bu veriler sitedeki "Demo analizi" sayfasında analiz ediliyor; rapordaki değerlendirme yalnızca CMU verisiyle, ikisi karıştırılmıyor (tarayıcı zamanlaması, beyana dayalı roller).

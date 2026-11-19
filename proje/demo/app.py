@@ -1,7 +1,8 @@
 """Localhost demo: password + typing-rhythm login (BİL462 project A5).
 
 Run:  cd proje && .venv/bin/python demo/app.py   ->  http://127.0.0.1:5000
-Demo data (team members only) are stored in demo/instance/keystroke_demo.db and are NEVER used in the CMU evaluation.
+Demo data (volunteer participants who consented) are stored in demo/instance/keystroke_demo.db; they are analysed only on the
+"Demo analysis" page of this site and are NEVER used in the CMU evaluation or the report.
 """
 import json, os, secrets, sys
 import numpy as np
@@ -13,6 +14,8 @@ sys.path.insert(0, HERE)
 import db  # noqa: E402
 from features import EntryError, events_to_features  # noqa: E402
 from verifier import CMU_PASSWORD, LEVELS, MIN_ENROL, UserModel  # noqa: E402
+from i18n import LANGS, js_strings, lang, tr  # noqa: E402
+from analysis import analyse  # noqa: E402
 
 RESULTS = os.path.join(HERE, "..", "results")
 app = Flask(__name__)
@@ -31,12 +34,36 @@ app.secret_key = _secret()
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Strict")
 
 
+@app.context_processor
+def inject_i18n():
+    num = lambda x: (f"{x:.2f}".replace(".", ",") if lang() == "tr" else f"{x:.2f}")
+    def pc(x):
+        if x is None:
+            return "–"
+        s = f"{x * 100:.1f}"
+        return "%" + s.replace(".", ",") if lang() == "tr" else s + "%"
+    return {"_": tr, "lang": lang(), "langs": LANGS, "JS": js_strings(), "num": num, "pc": pc}
+
+
+@app.get("/lang/<code>")
+def set_lang(code):
+    """Yalnızca arayüz dili değişir; hiçbir veri, skor ya da oturum durumu etkilenmez."""
+    nxt = request.args.get("next") or "/"
+    if not nxt.startswith("/") or nxt.startswith("//"):
+        nxt = "/"
+    resp = redirect(nxt)
+    if code in LANGS:
+        resp.set_cookie("lang", code, max_age=365 * 24 * 3600, samesite="Strict", httponly=True)
+    return resp
+
+
 def current_user(c):
     uid = session.get("uid")
     return db.user_by_id(c, uid) if uid else None
 
 
-def bad(msg, code=400):
+def bad(key, code=400, **kw):
+    msg = tr(key, **kw)
     return jsonify({"ok": False, "error": msg}), code
 
 
@@ -56,16 +83,16 @@ def register():
     d = request.get_json(force=True)
     name, pw, pw2 = (d.get("username") or "").strip(), d.get("password") or "", d.get("password2") or ""
     if not (3 <= len(name) <= 32) or not name.replace("_", "").replace(".", "").isalnum():
-        return bad("Username: 3-32 letters, digits, '_' or '.'")
+        return bad("err_username")
     if pw != pw2:
-        return bad("The two passwords differ.")
+        return bad("err_pw_differ")
     if not (6 <= len(pw) <= 32) or any(ch.isspace() for ch in pw):
-        return bad("Password: 6-32 characters, no spaces.")
+        return bad("err_pw_rule")
     if not d.get("consent"):
-        return bad("Consent is required to store your typing-rhythm template.")
+        return bad("err_consent")
     c = db.connect()
     if db.user_by_name(c, name):
-        return bad("This username already exists.")
+        return bad("err_user_exists")
     uid = db.add_user(c, name, generate_password_hash(pw), len(pw), pw == CMU_PASSWORD)
     session.clear()
     session.update(uid=uid, enrol_session=1)
@@ -89,13 +116,13 @@ def enroll():
     c = db.connect()
     u = current_user(c)
     if not u:
-        return bad("Not signed in.", 401)
+        return bad("err_not_signed", 401)
     try:
         text, feats, _ = events_to_features(request.get_json(force=True).get("events", []))
     except EntryError as e:
-        return bad(str(e))
+        return bad(e.key, **e.kw)
     if len(text) != u["pw_length"] or not check_password_hash(u["pw_hash"], text):
-        return bad("Typed text does not match your password. Entries with typos are discarded (as in the CMU study).")
+        return bad("err_mismatch")
     db.add_sample(c, u["id"], session["enrol_session"], feats, sum(feats[1::3]) + feats[-1])
     X, s = db.samples(c, u["id"])
     X = np.array(X)
@@ -108,7 +135,7 @@ def new_session():
     c = db.connect()
     u = current_user(c)
     if not u:
-        return bad("Not signed in.", 401)
+        return bad("err_not_signed", 401)
     counts = db.session_counts(c, u["id"])
     session["enrol_session"] = (max([r["session_no"] for r in counts]) + 1) if counts else 1
     return jsonify({"ok": True, "session": session["enrol_session"]})
@@ -125,28 +152,28 @@ def verify():
     d = request.get_json(force=True)
     role = d.get("role", "genuine")
     if role not in ("genuine", "impostor"):
-        return bad("bad role")
+        return bad("err_bad_request")
     c = db.connect()
     u = db.user_by_name(c, (d.get("username") or "").strip())
     if not u:
-        return bad("Unknown user.")
+        return bad("err_unknown_user")
     entries = d.get("entries") or []
     if not 1 <= len(entries) <= 5:
-        return bad("Send 1-5 entries.")
+        return bad("err_entries")
     feats = []
     for ev in entries:
         try:
             text, f, _ = events_to_features(ev)
         except EntryError as e:
-            return bad(str(e))
+            return bad(e.key, **e.kw)
         if len(text) != u["pw_length"] or not check_password_hash(u["pw_hash"], text):
             db.add_attempt(c, u["id"], role, len(entries), False, None, None, None, False)
             return jsonify({"ok": True, "password_ok": False, "accepted": False,
-                            "message": "Wrong password: rejected before the rhythm check."})
+                            "message": tr("wrong_pw")})
         feats.append(f)
     X, s = db.samples(c, u["id"])
     if len(X) < MIN_ENROL:
-        return bad(f"{u['username']} has only {len(X)} enrolment entries (minimum {MIN_ENROL}).")
+        return bad("err_too_few", u=u["username"], n=len(X), m=MIN_ENROL)
     m = UserModel(X, s, bool(u["cmu_layout"]), u["level"])
     z, fused = m.score(feats)
     acc = fused <= m.threshold
@@ -177,7 +204,7 @@ def set_level():
     u = current_user(c)
     lv = request.get_json(force=True).get("level")
     if not u or lv not in LEVELS:
-        return bad("bad request")
+        return bad("err_bad_request")
     db.set_level(c, u["id"], lv)
     return jsonify({"ok": True})
 
@@ -187,7 +214,7 @@ def delete():
     c = db.connect()
     u = current_user(c)
     if not u:
-        return bad("Not signed in.", 401)
+        return bad("err_not_signed", 401)
     db.delete_user(c, u["id"])
     session.clear()
     return jsonify({"ok": True, "next": url_for("home")})
@@ -210,12 +237,20 @@ def lab():
     return render_template("lab.html", user=current_user(c), users=db.all_users(c), attempts=at[:60], stats=stats)
 
 
+@app.get("/analysis")
+def analysis_page():
+    c = db.connect()
+    return render_template("analysis.html", user=current_user(c), A=analyse(c))
+
+
 @app.get("/results")
 def results():
     c = db.connect()
     R = json.load(open(os.path.join(RESULTS, "results.json")))
     F = json.load(open(os.path.join(RESULTS, "final.json")))
-    return render_template("results.html", user=current_user(c), R=R, F=F)
+    names = {n: tr("det_" + n) for n in F["fold_protocol"]}
+    pct = lambda x: (f"{x * 100:.1f}".replace(".", ",") if lang() == "tr" else f"{x * 100:.1f}")
+    return render_template("results.html", user=current_user(c), R=R, F=F, names=names, pct=pct, order=list(F["fold_protocol"]))
 
 
 @app.get("/results/img/<path:name>")

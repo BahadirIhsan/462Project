@@ -1,16 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% block title %}{{ _('nav_register') }}{% endblock %}
 {% block body %}
-<h1>Create an account</h1>
-<p class="sub">Any password of 6-32 characters works. Tip: if you choose the CMU benchmark password <code>{{ cmu_password }}</code>,
-the Siamese embedding (trained on the 51 CMU typists) is used as a third detector.</p>
+<h1>{{ _('reg_title') }}</h1>
+<p class="sub">{{ _('reg_sub', pw=cmu_password)|safe }}</p>
 <div class="card" style="max-width:520px">
-  <label for="u">Username</label><input id="u" type="text" autocomplete="off" maxlength="32">
-  <label for="p">Password</label><input id="p" type="password" autocomplete="new-password">
-  <label for="p2">Repeat password</label><input id="p2" type="password" autocomplete="new-password">
+  <label for="u">{{ _('username') }}</label><input id="u" type="text" autocomplete="off" maxlength="32">
+  <label for="p">{{ _('password') }}</label><input id="p" type="password" autocomplete="new-password">
+  <label for="p2">{{ _('password2') }}</label><input id="p2" type="password" autocomplete="new-password">
   <label style="display:flex;gap:8px;align-items:flex-start;color:var(--ink)"><input id="c" type="checkbox" style="margin-top:4px">
-  <span>I agree that my typing-rhythm template (timing numbers only, no key text) is stored locally for this demo; I can delete it at any time under "My data".</span></label>
-  <div class="row" style="margin-top:14px"><button id="go">Register and start enrolment</button></div>
+  <span>{{ _('consent') }}</span></label>
+  <div class="row" style="margin-top:14px"><button id="go">{{ _('reg_button') }}</button></div>
   <div class="msg" id="m"></div>
 </div>
 <script>
